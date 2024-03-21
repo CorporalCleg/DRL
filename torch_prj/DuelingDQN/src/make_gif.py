@@ -4,13 +4,13 @@ import gym
 import torch
 import random
 import gym
-from dqn import greedy
+from dueling_dqn import greedy
     
 
 env_name = 'CartPole-v1'
 
 
-def save_frames_as_gif(frames, path='./', filename=f'{env_name}+dqn.gif'):
+def save_frames_as_gif(frames, path='./', filename='dueling_net.gif'):
 
     plt.figure(figsize=(frames[0].shape[1] / 72.0, frames[0].shape[0] / 72.0), dpi=72)
     patch = plt.imshow(frames[0])
@@ -24,7 +24,7 @@ def save_frames_as_gif(frames, path='./', filename=f'{env_name}+dqn.gif'):
 
 
 env = gym.make('CartPole-v1')
-model = torch.jit.load('torch_prj/DQN/models/dqn_net(works).pt').to('cpu')
+model = torch.jit.load('torch_prj/DuelingDQN/models/dueling_dqn_net.pt').to('cpu')
 model.eval()
 env = gym.make(env_name, render_mode='rgb_array')
 observation, info = env.reset(seed=random.randint(1, 30))
@@ -33,7 +33,7 @@ act = lambda state: strategy.select_action(model, torch.tensor(state))
 
 
 frames = []
-for t in range(1000):
+for t in range(2000):
    
     frames.append(env.render())
     action = act(observation)

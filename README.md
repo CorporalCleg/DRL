@@ -16,5 +16,9 @@
 
 ### Script try_model.py will show you smth like this
 \
-![DQN](gym_animation.gif)
+![DQN](CartPole-v1+dqn.gif)
+\
+
+\
+![PG](FlappyBird-v0+pg.gif)
 \

@@ -1,11 +1,11 @@
 import torch
 import random
 import gym
-from dqn import greedy
+from dueling_dqn import greedy
     
 
 env_name = 'CartPole-v1'
-model = torch.jit.load('torch_prj/DQN/models/dqn_net(works).pt').to('cpu')
+model = torch.jit.load('torch_prj/DuelingDQN/models/dueling_dqn_net.pt').to('cpu')
 model.eval()
 env = gym.make(env_name, render_mode='human')
 observation, info = env.reset(seed=random.randint(1, 30))

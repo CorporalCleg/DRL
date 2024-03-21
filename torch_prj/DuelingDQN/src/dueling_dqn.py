@@ -6,7 +6,7 @@ import gym
 import matplotlib.pyplot as plt
 import tqdm
 from itertools import count
-from FCNet import FCN
+from FCDuelingNet import FCNDueling
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -85,7 +85,7 @@ class greedy():
 #dqn agent all-in-one class
 class DQN():
     def __init__(self, mk_model_fn, env, training_strategy, mk_optimizer_fn, \
-                replay_buffer, batch_size=64, gamma=0.99, num_episodes=2000, criterion=nn.SmoothL1Loss(), common_startegy= greedy(), device='cuda:0'):
+                replay_buffer, batch_size=64, gamma=0.95, num_episodes=2000, criterion=nn.SmoothL1Loss(), common_startegy= greedy(), device='cuda:0'):
         
         self.online_model = mk_model_fn().to(device)
         self.target_model = mk_model_fn().to(device)
@@ -102,7 +102,7 @@ class DQN():
         self.device = device
         self.rewards = []
 
-    def train(self, update_model_every_x_step=40, min_buff_size=10):
+    def train(self, update_model_every_x_step=10, min_buff_size=10):
         step_elapsed = 0
         self.online_model.train()# <-- need to use dropout
         for e in tqdm.tqdm(range(self.num_episodes)):
@@ -132,10 +132,11 @@ class DQN():
                     self.rewards.append(sum_reward)
                     break
                 
-    def update_model(self):
+    def update_model(self, tau=0.5):
         for target, online in zip(self.target_model.parameters(), 
                                   self.online_model.parameters()):
-            target.data.copy_(online.data)
+            target.data.copy_(tau * target.data + (1 - tau) * online.data)
+            #target.data.copy_(online.data)
 
     def optimize_model(self):    
         batch_s, batch_a, batch_r, batch_ns, batch_tr = self.replay_buffer.sample(self.batch_size)
@@ -156,18 +157,18 @@ class DQN():
         value_loss.backward()
         self.optimizer.step()
     
-    def save_model(self, model_name='torch_prj/DQN/models/dqn_net.pt'):
+    def save_model(self, model_name='torch_prj/DuelingDQN/models/dueling_dqn_net.pt'):
         model_scripted = torch.jit.script(self.online_model)
         model_scripted.save(model_name)
 
 #create env, model, optimizer and memory buffer
 env_name = 'CartPole-v1'
 env = gym.make(env_name)
-EPISODES = 4000        
+EPISODES = 500        
 
 #create fn that generates model, because we need 2 nets: target and online
 if __name__ == '__main__':
-    mk_model_fn = lambda: FCN(env.observation_space.shape[0], env.action_space.n, n_hidden=(512, 256))
+    mk_model_fn = lambda: FCNDueling(env.observation_space.shape[0], env.action_space.n, n_hidden=(512, 256, 128))
     mk_optimizer_fn = lambda model: optim.RMSprop(params=model.parameters(), lr=0.0005)
     memory = ReplayMemory()
 
@@ -181,4 +182,4 @@ if __name__ == '__main__':
     rewards = np.array(dqn_agent.rewards)
 
     plt.plot(rewards[np.arange(0, len(rewards))[::20]])
-    plt.savefig('rewards')
+    plt.savefig('torch_prj/DuelingDQN/images/rewards')
